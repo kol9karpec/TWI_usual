@@ -10,8 +10,7 @@ const char * twi_error_str[] = {
 	"Start sending failed!",
 	"SLA+R NACK received!",
 	"SLA+W NACK received!",
-	"Data sending failed!",
-	"Data receiving failed!",
+	"DATA NACK received!",
 	"Bus error!",
 	"Another error!",
 };
@@ -88,7 +87,7 @@ uint8_t twi_send_sla_r(uint8_t addr) {
 			}
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
-				twi_error = ;
+				twi_error = BUS_ERROR;
 				result = 0;
 				break;
 			}
@@ -105,24 +104,34 @@ uint8_t twi_send_sla_r(uint8_t addr) {
 
 uint8_t twi_send_sla_w(uint8_t addr) {
 	uint8_t result = 1;
-	if((twi_status == START_SENT) || \
-		(twi_status == REP_START_SENT)) {
-		TWDR = SLA_W(addr);
-		TWCR = TWI_SEND_TWDR;
-		result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
-		if(result) {
-			if(TWI_STATUS_REG != TW_MT_SLA_ACK) {
-				twi_status = ERROR_DETECTED;
-				twi_error = SLA_W_SENDING_FAILED;
-				result = 0;
-			} else {
+	TWDR = SLA_W(addr);
+	TWCR = TWI_SEND_TWDR;
+	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
+
+	if(result) {
+		switch(TW_STATUS) {
+			case TW_MT_SLA_ACK: {
 				twi_status = MT;
+				break;
+			}
+			case TW_MT_SLA_NACK: {
+				twi_status = ERROR_DETECTED;
+				twi_error = SLA_W_NACK_RECEIVED;
+				result = 0;
+				break;
+			}
+			case TW_BUS_ERROR: {
+				twi_status = ERROR_DETECTED;
+				twi_error = BUS_ERROR;
+				result = 0;
+				break;
+			}
+			default: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ANOTHER_ERROR;
+				result = 0;
 			}
 		}
-	} else {
-		twi_status = ERROR_DETECTED;
-		twi_error = ILLEGAL_SLA_W;
-		result = 0;
 	}
 	
 	return result;
@@ -130,21 +139,34 @@ uint8_t twi_send_sla_w(uint8_t addr) {
 
 uint8_t twi_send_data(uint8_t data) {
 	uint8_t result = 1;
-	if(twi_status == MT) {
-		TWDR = data;
-		TWCR = TWI_SEND_TWDR;
-		result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
-		if(result) {
-			if(TWI_STATUS_REG != TW_MT_DATA_ACK) {
+	TWDR = data;
+	TWCR = TWI_SEND_TWDR;
+	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
+	
+	if(result) {
+		switch(TW_STATUS) {
+			case TW_MT_DATA_ACK: {
+				twi_status = MT;
+				break;
+			}
+			case TW_MT_DATA_NACK: {
 				twi_status = ERROR_DETECTED;
-				twi_error = SLA_W_SENDING_FAILED;
+				twi_error = DATA_NACK_RECEIVED;
+				result = 0;
+				break;
+			}
+			case TW_BUS_ERROR: {
+				twi_status = ERROR_DETECTED;
+				twi_error = BUS_ERROR;
+				result = 0;
+				break;
+			}
+			default: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ANOTHER_ERROR;
 				result = 0;
 			}
 		}
-	} else {
-		twi_status = ERROR_DETECTED;
-		twi_error = ILLEGAL_DATA_TR;
-		result = 0;
 	}
 	
 	return result;
@@ -152,27 +174,31 @@ uint8_t twi_send_data(uint8_t data) {
 
 uint8_t twi_receive_data(uint8_t * dest, uint8_t answer) {
 	uint8_t result = 1;
-	if(twi_status == MR) {
-		/*if(answer) { //countinue receiving
-			TWCR = TWI_SEND_ACK;
-		} else {
-			TWCR = TWI_SEND_NACK;
-		}*/
-		TWCR = (answer) ? TWI_SEND_ACK : TWI_SEND_NACK;		
-		result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
-		if(result) {
-			if((TWI_STATUS_REG != TW_MR_DATA_ACK) && (answer)) {
+	TWCR = (answer) ? TWI_SEND_ACK : TWI_SEND_NACK;		
+	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
+	
+	if(result) {
+		switch(TW_STATUS) {
+			case TW_MR_DATA_ACK:
+			case TW_MR_DATA_NACK: {
+				*dest = TWDR;
+				twi_status = MR;
+				break;
+			}
+			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
-				twi_error = DATA_RECEIVE_FAILED;
+				twi_error = BUS_ERROR;
+				result = 0;
+				break;
+			}
+			default: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ANOTHER_ERROR;
 				result = 0;
 			}
 		}
-	} else {
-		twi_status = ERROR_DETECTED;
-		twi_error = ILLEGAL_DATA_RC;
-		result = 0;
 	}
-	
+
 	return result;
 }
 
