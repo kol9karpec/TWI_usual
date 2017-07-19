@@ -7,17 +7,13 @@ const char * twi_error_str[] = {
 	"Zero error!",
 	"Device is not respoding!",
 	"No error!",
-	"Start sending error!",
-	"SLA+R sending failed!",
-	"SLA+W sending failed!",
+	"Start sending failed!",
+	"SLA+R NACK received!",
+	"SLA+W NACK received!",
 	"Data sending failed!",
 	"Data receiving failed!",
-	"Illegal SLA+R sending!",
-	"Illegal SLA+W sending!",
-	"Illegal DATA transmitting!",
-	"Illegal DATA receiving!",
-	"Illegal START sending!",
-	"Illegal STOP sending!",
+	"Bus error!",
+	"Another error!",
 };
 
 void twi_init() {
@@ -53,12 +49,14 @@ uint8_t twi_send_start() {
 			}
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
-				twi_error = START_SENDING_FAILED;
+				twi_error = BUS_ERROR;
 				result = 0;
 				break;
 			}
 			default: {
-				//Other cases
+				twi_status = ERROR_DETECTED;
+				twi_error = ANOTHER_ERROR;
+				result = 0;
 			}
 		}
 	}	
@@ -78,22 +76,26 @@ uint8_t twi_send_sla_r(uint8_t addr) {
 	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
 	if(result) {
 		switch(TW_STATUS) {
-			case TW_START: {
-				twi_status = START_SENT;
+			case TW_MR_SLA_ACK: {
+				twi_status = MR;
 				break;
 			}
-			case TW_REP_START: {
-				twi_status = REP_START_SENT;
+			case TW_MR_SLA_NACK: {
+				twi_status = ERROR_DETECTED;
+				twi_error = SLA_R_NACK_RECEIVED;
+				result = 0;
 				break;
 			}
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
-				twi_error = START_SENDING_FAILED;
+				twi_error = ;
 				result = 0;
 				break;
 			}
 			default: {
-				//Other cases
+				twi_status = ERROR_DETECTED;
+				twi_error = ANOTHER_ERROR;
+				result = 0;
 			}
 		}
 	}
