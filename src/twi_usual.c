@@ -39,27 +39,28 @@ void twi_init() {
 
 uint8_t twi_send_start() {
 	uint8_t result = 1;
-	if((twi_status != ERROR_DETECTED) && \
-		(twi_status != NOT_INITIATED) && \
-		(twi_status != NOT_INITIATED)) {
-		TWCR = TWI_SEND_START;
-		result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
-		if(result) {
-			if (twi_status == FREE) {
-				if (TWI_STATUS_REG == TW_START) {
-					twi_status = START_SENT;
-				} else {
-					twi_status = ERROR_DETECTED;
-					twi_error = START_SENDING_FAILED;				
-				}
-			} else {
-
+	TWCR = TWI_SEND_START;
+	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
+	if(result) {
+		switch(TW_STATUS) {
+			case TW_START: {
+				twi_status = START_SENT;
+				break;
+			}
+			case TW_REP_START: {
+				twi_status = REP_START_SENT;
+				break;
+			}
+			case TW_BUS_ERROR: {
+				twi_status = ERROR_DETECTED;
+				twi_error = START_SENDING_FAILED;
+				result = 0;
+				break;
+			}
+			default: {
+				//Other cases
 			}
 		}
-	} else {
-		twi_status = ERROR_DETECTED;
-		twi_error = ILLEGAL_START;
-		result = 0;
 	}	
 
 	return result;
@@ -68,30 +69,34 @@ uint8_t twi_send_start() {
 void twi_send_stop() {
 	TWCR = TWI_SEND_STOP;
 	twi_status = FREE;
-	twi_error = NO_ERROR;
 }
 
 uint8_t twi_send_sla_r(uint8_t addr) {
 	uint8_t result = 1;
-	if((twi_status == START_SENT) || \
-		(twi_status == REP_START_SENT)) {
-		TWDR = SLA_R(addr);
-		TWCR = TWI_SEND_TWDR;
-		result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
-		if(result) {
-			if(TWI_STATUS_REG != TW_MR_SLA_ACK) {
+	TWDR = SLA_R(addr);
+	TWCR = TWI_SEND_TWDR;
+	result = twi_wait_for_twint(MAX_ITER_WAIT_TWINT);
+	if(result) {
+		switch(TW_STATUS) {
+			case TW_START: {
+				twi_status = START_SENT;
+				break;
+			}
+			case TW_REP_START: {
+				twi_status = REP_START_SENT;
+				break;
+			}
+			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
-				twi_error = SLA_R_SENDING_FAILED;
+				twi_error = START_SENDING_FAILED;
 				result = 0;
-			} else {
-				twi_status = MR;
+				break;
+			}
+			default: {
+				//Other cases
 			}
 		}
-	} else {
-		twi_status = ERROR_DETECTED;
-		twi_error = ILLEGAL_SLA_R;
-		result = 0;
-	}	
+	}
 	
 	return result;
 }
