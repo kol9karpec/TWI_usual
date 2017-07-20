@@ -22,20 +22,21 @@ int main(void) {
 
 	while(1) {
 		twi_send_start();
-		twi_send_sla_w(BH1750_ADDR);
+		twi_send_sla_w(BH1750_ADDR_L);
 		twi_send_data(BH1750_ONE_TIME_H_RES_MODE);
+		_delay_ms(120);
 		twi_send_start();
-		twi_send_sla_r(BH1750_ADDR);
+		twi_send_sla_r(BH1750_ADDR_L);
 		twi_receive_data(&h_byte,1);
 		twi_receive_data(&l_byte,0);
 		twi_send_stop();
 
 		result = ((h_byte << 8) | l_byte);
 
-		USART0_print("Light: %d\n",result);
+		USART0_print("Light: %u\n",result);
 
 		LED_PORT ^= BIT(LED_BIT);
-		_delay_ms(1000);
+		_delay_ms(250);
 	}
 
 	return 0;

@@ -11,6 +11,7 @@ const char * twi_error_str[] = {
 	"SLA+R NACK received!",
 	"SLA+W NACK received!",
 	"DATA NACK received!",
+	"Arbitration lost!",
 	"Bus error!",
 	"Another error!",
 };
@@ -85,6 +86,12 @@ uint8_t twi_send_sla_r(uint8_t addr) {
 				result = 0;
 				break;
 			}
+			case TW_MR_ARB_LOST: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ARBITRATION_LOST;
+				result = 0;
+				break;
+			}
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
 				twi_error = BUS_ERROR;
@@ -120,6 +127,12 @@ uint8_t twi_send_sla_w(uint8_t addr) {
 				result = 0;
 				break;
 			}
+			case TW_MT_ARB_LOST: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ARBITRATION_LOST;
+				result = 0;
+				break;
+			} 
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
 				twi_error = BUS_ERROR;
@@ -152,6 +165,12 @@ uint8_t twi_send_data(uint8_t data) {
 			case TW_MT_DATA_NACK: {
 				twi_status = ERROR_DETECTED;
 				twi_error = DATA_NACK_RECEIVED;
+				result = 0;
+				break;
+			}
+			case TW_MT_ARB_LOST: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ARBITRATION_LOST;
 				result = 0;
 				break;
 			}
@@ -188,6 +207,12 @@ uint8_t twi_receive_data(uint8_t * dest, uint8_t answer) {
 			case TW_BUS_ERROR: {
 				twi_status = ERROR_DETECTED;
 				twi_error = BUS_ERROR;
+				result = 0;
+				break;
+			}
+			case TW_MT_ARB_LOST: {
+				twi_status = ERROR_DETECTED;
+				twi_error = ARBITRATION_LOST;
 				result = 0;
 				break;
 			}

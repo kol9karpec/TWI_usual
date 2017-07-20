@@ -5,7 +5,6 @@
 
 #include "bit_operations.h"
 #include "usart.h"
-#include "bh1750.h"
 
 #define SDA_DDR DDRD
 #define	SDA_PORT PORTD
@@ -47,6 +46,7 @@ typedef enum twi_error_t {
 	SLA_R_NACK_RECEIVED,
 	SLA_W_NACK_RECEIVED,
 	DATA_NACK_RECEIVED,
+	ARBITRATION_LOST,
 	BUS_ERROR,
 	ANOTHER_ERROR
 } twi_error_t;
