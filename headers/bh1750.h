@@ -1,3 +1,6 @@
+#ifndef BH1750_H
+#define BH1750_H
+
 #include "twi_usual.h"
 
 #define BH1750_ADDR_L 0x23
@@ -14,15 +17,11 @@
 #define BH1750_ONE_TIME_H_RES_MODE2 0x21
 #define BH1750_ONE_TIME_L_RES_MODE 0x23
 
-//3 righter bits are taken
-#define BH1750_CHANGE_MTREG_H(x) (0x40 | (x & 0x07))
+//3 left bits are taken
+#define BH1750_CHANGE_MTREG_H(x) (0x40 | (x & 0xD0))
 
-//5 righter bits are taken
+//5 right bits are taken
 #define BH1750_CHANGE_MTREG_L(x) (0x60 | (x & 0x1F))
-
-typedef enum bh1750_status_t {
-	//TODO: Implementation
-} bh1750_status_t;
 
 uint8_t bh1750_send_command(uint8_t opecode);
 
@@ -30,3 +29,4 @@ uint8_t bh1750_change_mtreg(uint8_t new_mtreg);
 
 uint8_t bh1750_read_data(uint8_t * l_byte_dest, uint8_t * h_byte_dest);
 
+#endif

@@ -4,7 +4,6 @@
 #include <util/twi.h>
 
 #include "bit_operations.h"
-#include "usart.h"
 
 #define SDA_DDR DDRD
 #define	SDA_PORT PORTD
